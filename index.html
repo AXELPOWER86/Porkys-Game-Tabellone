@@ -12,122 +12,6 @@
   <link rel="manifest" href="manifest.json">
   <title>Porky's Game - Tabellone</title>
   <style>
-  /* =========================
-   ADATTAMENTO TABLET
-   ========================= */
-@media (min-width: 768px) and (max-width: 1024px) {
-
-  body {
-    font-size: 18px;
-  }
-
-  h1 {
-    font-size: 42px;
-  }
-
-  .description {
-    font-size: 20px;
-  }
-
-  /* Layout principale */
-  .game-wrapper {
-    gap: 30px;
-  }
-
-  /* TABELLONE */
-  .board {
-    grid-template-columns: repeat(8, 10vw);
-    grid-template-rows: repeat(7, 9vh);
-    max-width: 95vw;
-  }
-
-  .cell {
-    width: 9.5vw;
-    height: 9vh;
-    font-size: 80%;
-    border-radius: 10px;
-  }
-
-  /* Fake window */
-  .fake-window {
-    max-width: 75%;
-    font-size: 24px;
-    padding: 30px;
-  }
-
-  /* PEDINE */
-  .pedina {
-    width: 26px;
-    height: 26px;
-  }
-
-  /* LEGENDA */
-  .legend {
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-  }
-
-  .legend .pedina-name {
-    font-size: 14px;
-  }
-
-  .legend .color-indicator {
-    width: 14px;
-    height: 14px;
-  }
-
-  /* DADO */
-  .dice {
-    width: 10vw;
-    height: 22vh;
-    font-size: 16vh;
-  }
-
-  .dice-button {
-    font-size: 18px;
-    padding: 14px 18px;
-  }
-
-  /* CARTE */
-  .cards-wrapper {
-    flex: 0 0 300px;
-  }
-
-  .carta {
-    width: 220px;
-    height: 360px;
-  }
-
-  .cards-wrapper h1 {
-    font-size: 26px;
-  }
-
-  .info {
-    font-size: 20px;
-  }
-
-  /* BOTTONI */
-  button {
-    font-size: 18px;
-    padding: 12px 16px;
-  }
-
-  .menu-partita button {
-    font-size: 18px;
-    padding: 12px 18px;
-  }
-
-  .name-form input {
-    font-size: 18px;
-    padding: 10px;
-  }
-
-  .name-form button {
-    font-size: 18px;
-    padding: 10px 14px;
-  }
-}
-
   body {
   font-family: Arial, sans-serif;
   text-align: center;
@@ -548,7 +432,122 @@ input[type="file"] {
 .menu-partita button:hover {
   background: #9b59b6;
 }
-  </style>
+/* =========================
+   ADATTAMENTO TABLET
+   ========================= */
+@media (min-width: 768px) and (max-width: 1024px) {
+
+  body {
+    font-size: 18px;
+  }
+
+  h1 {
+    font-size: 42px;
+  }
+
+  .description {
+    font-size: 20px;
+  }
+
+  /* Layout principale */
+  .game-wrapper {
+    gap: 30px;
+  }
+
+  /* TABELLONE */
+  .board {
+    grid-template-columns: repeat(8, 10vw);
+    grid-template-rows: repeat(7, 9vh);
+    max-width: 95vw;
+  }
+
+  .cell {
+    width: 9.5vw;
+    height: 9vh;
+    font-size: 80%;
+    border-radius: 10px;
+  }
+
+  /* Fake window */
+  .fake-window {
+    max-width: 75%;
+    font-size: 24px;
+    padding: 30px;
+  }
+
+  /* PEDINE */
+  .pedina {
+    width: 26px;
+    height: 26px;
+  }
+
+  /* LEGENDA */
+  .legend {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+
+  .legend .pedina-name {
+    font-size: 14px;
+  }
+
+  .legend .color-indicator {
+    width: 14px;
+    height: 14px;
+  }
+
+  /* DADO */
+  .dice {
+    width: 10vw;
+    height: 22vh;
+    font-size: 16vh;
+  }
+
+  .dice-button {
+    font-size: 18px;
+    padding: 14px 18px;
+  }
+
+  /* CARTE */
+  .cards-wrapper {
+    flex: 0 0 300px;
+  }
+
+  .carta {
+    width: 220px;
+    height: 360px;
+  }
+
+  .cards-wrapper h1 {
+    font-size: 26px;
+  }
+
+  .info {
+    font-size: 20px;
+  }
+
+  /* BOTTONI */
+  button {
+    font-size: 18px;
+    padding: 12px 16px;
+  }
+
+  .menu-partita button {
+    font-size: 18px;
+    padding: 12px 18px;
+  }
+
+  .name-form input {
+    font-size: 18px;
+    padding: 10px;
+  }
+
+  .name-form button {
+    font-size: 18px;
+    padding: 10px 14px;
+  }
+}
+</style>
 </head>
 
 <body>
@@ -1503,4 +1502,5 @@ if ("serviceWorker" in navigator) {
 
 
 </html>
+
 
