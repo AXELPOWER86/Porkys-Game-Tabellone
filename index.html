@@ -1129,15 +1129,30 @@ function forzaTurno(nomeCliccato) {
 }
 
 /* ================= DADO ================= */
-function lanciaDado(fromDice = false) {
-  if (!dadoGiaLanciato && fromDice) return;
+function lanciaDado() {
+  // 🔒 blocca solo se il dado sta già girando
+  if (dadoAbilitato) return;
 
-  // 🔥 PRIMA VOLTA
-  if (!dadoGiaLanciato) {
-    dadoGiaLanciato = true;
-    dadoAbilitato = true;
-    diceButton.style.display = "none";
-  }
+  dadoAbilitato = true;
+  diceButton.style.display = "none";
+
+  let rollCount = 12;
+
+  const anim = setInterval(() => {
+    const temp = Math.floor(Math.random() * 6) + 1;
+    dice.className = "dice show-" + temp;
+    rollCount--;
+
+    if (rollCount <= 0) {
+      clearInterval(anim);
+      const risultato = Math.floor(Math.random() * 6) + 1;
+      dice.className = "dice show-" + risultato;
+      dadoAbilitato = false;
+      muoviPedina(risultato);
+    }
+  }, 90);
+}
+
 
   let rollCount = 12;
 
@@ -1155,13 +1170,8 @@ function lanciaDado(fromDice = false) {
 }
 
 
-diceButton.addEventListener("click", () => {
-  if (!dadoGiaLanciato) lanciaDado(false);
-});
-
-dice.addEventListener("click", () => {
-  if (dadoAbilitato) lanciaDado(true);
-});
+diceButton.addEventListener("click", lanciaDado);
+dice.addEventListener("click", lanciaDado);
 
 //reset bottone lancio dado //
 
@@ -1408,6 +1418,7 @@ if ("serviceWorker" in navigator) {
 </body>
 
 </html>
+
 
 
 
