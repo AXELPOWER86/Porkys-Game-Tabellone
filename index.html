@@ -394,10 +394,11 @@ button {
 }
 
 @keyframes shake {
-  0% { transform: rotate(0deg); }
-  25% { transform: rotate(180deg); }
-  50% { transform: rotate(-180deg); }
-  75% { transform: rotate(180deg); }
+  0%   { transform: rotateY(0deg); }
+  25%  { transform: rotateY(180deg); }
+  50%  { transform: rotateY(-180deg); }
+  75%  { transform: rotateY(180deg); }
+  100% { transform: rotateY(0deg); }
 }
 
 /* input file nascosti */
@@ -1387,4 +1388,5 @@ if ("serviceWorker" in navigator) {
 </body>
 
 </html>
+
 
