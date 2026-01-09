@@ -279,28 +279,39 @@ h1 {
    
 /* FACCE DADO DIVERSE */    
 .dice {
-  width: 6vw;
-  height: 21.5vh;
-  font-size: 15vh;
-  display: center;
+  width: clamp(48px, 5vw, 72px);
+  height: clamp(48px, 5vw, 72px);
+
+  font-size: clamp(36px, 4vw, 56px);
+
+  display: flex;
   align-items: center;
-  justify-content: right;
+  justify-content: center;
+
   user-select: none;
   cursor: pointer;
+
   perspective: 800px;
   transform-style: preserve-3d;
   transition: transform 0.35s cubic-bezier(.22,.61,.36,1);
 }
 
 
+
 .face {
   position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
   opacity: 0;
   transform: scale(0.9);
   transition:
     opacity 0.25s ease,
     transform 0.25s ease;
 }
+
 
 .dice.show-1 .face-1,
 .dice.show-2 .face-2,
@@ -1414,5 +1425,6 @@ if ("serviceWorker" in navigator) {
 </body>
 
 </html>
+
 
 
