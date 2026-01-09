@@ -326,14 +326,17 @@ h1 {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  gap: 20px;
+  gap: 8px; /* ⬅️ distanza ridotta */
 }
 
 .board-wrapper {
   flex: 0 0 auto;
 }
 
-.cards-wrapper { flex: 0 0 260px; }
+.cards-wrapper {
+  flex: 0 0 220px; /* ⬅️ più vicino al tabellone */
+  margin-left: 4px;
+}
 
 .cards-wrapper h1,
 .cards-wrapper .info,
@@ -1411,4 +1414,5 @@ if ("serviceWorker" in navigator) {
 </body>
 
 </html>
+
 
