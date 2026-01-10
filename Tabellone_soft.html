@@ -1353,17 +1353,46 @@ diceButton.offsetHeight;
 resetDado();
 salvaPartita();
 });
+function avviaNuovaPartitaSilenziosa() {
+  document.querySelectorAll(".pedina").forEach(p => p.remove());
+  document.querySelectorAll(".pedina-name").forEach(l => l.remove());
 
+  pedine = [];
+  pedinaSelezionata = null;
+  turnoIndex = 0;
+  warningMessage.textContent = "";
+  coloriDisponibili = [...colors].sort(() => Math.random() - 0.5);
+
+  localStorage.removeItem("porkysGame");
+
+  // reset dado
+  dice.className = "dice";
+  diceButton.style.display = "inline-block";
+  diceButton.disabled = false;
+  resetDado();
+}
 /* ================= EVENTI ================= */
 inputNome.addEventListener("keydown", e => {
   if (e.key === "Enter") aggiungiPedina();
 });
 
 window.addEventListener("load", () => {
-  resetDado(); // 🔥 FONDAMENTALE
+  resetDado(); // fondamentale
 
-  if (localStorage.getItem("porkysGame")) {
-    caricaPartita();
+  const partitaSalvata = localStorage.getItem("porkysGame");
+
+  if (partitaSalvata) {
+    const nuova = confirm(
+      "Vuoi iniziare una NUOVA partita?\n\n" +
+      "✔ OK = Nuova partita\n" +
+      "❌ Annulla = Continua la precedente"
+    );
+
+    if (nuova) {
+      avviaNuovaPartitaSilenziosa();
+    } else {
+      caricaPartita();
+    }
   }
 });
 
@@ -1429,6 +1458,7 @@ document.querySelectorAll(".cell").forEach(cell => {
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("sw.js");
 }
+
 </script>
 </body>
 
