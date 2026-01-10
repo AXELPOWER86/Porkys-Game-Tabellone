@@ -1,8 +1,8 @@
 {
   "name": "Porky's Game",
   "short_name": "Porkys-game",
-  "start_url": "./",
-  "scope": "./",
+  "start_url": ".",
+  "scope": ".",
   "display": "standalone",
   "background_color": "#d7af5a",
   "theme_color": "#502369",
@@ -13,3 +13,4 @@
     { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
   ]
 }
+
