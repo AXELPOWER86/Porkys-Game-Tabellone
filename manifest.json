@@ -2,7 +2,7 @@
   "name": "Porky's Game",
   "short_name": "Porkys",
   "description": "Porky's Game",
-  "start_url": "https://axelpower86.github.io/Porkys-Game-Tabellone/index.html",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -22,3 +22,4 @@
   "lang": "it",
   "orientation": "landscape"
 }
+
