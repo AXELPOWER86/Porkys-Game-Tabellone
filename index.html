@@ -13,7 +13,8 @@
  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
  <meta name="apple-mobile-web-app-title" content="Porky's Game">
  <link rel="apple-touch-icon" href="icon-180.png">
- <link rel="manifest" href="./manifest.json">
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#502369">
 
 <title>Porky's Game – Home</title>
 
@@ -147,12 +148,18 @@ h1 {
 
 </div>
 <script>
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("sw.js");
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('SW registrato', reg))
+      .catch(err => console.error('SW errore', err));
+  });
 }
 </script>
+
 </body>
 </html>
+
 
 
 
