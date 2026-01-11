@@ -2,8 +2,8 @@
   "name": "Porky's Game",
   "short_name": "Porkys",
   "description": "Porky's Game",
-  "start_url": "./index.html",
-  "scope": "./",
+  "start_url": "/Porkys-Game-Tabellone/",
+  "scope": "/Porkys-Game-Tabellone/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#502369",
@@ -20,5 +20,3 @@
     }
   ]
 }
-
-
