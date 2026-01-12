@@ -473,11 +473,39 @@ input[type="file"] {
 .menu-partita button:hover {
   background: #9b59b6;
 }
-  </style>
+
+/* ===== EXIT ZONE (chiusura app) ===== */
+#exit-zone {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 80px;
+  height: 80px;
+  background: rgba(0,0,0,0.7);
+  color: white;
+  font-size: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .3s;
+  z-index: 9999;
+}
+
+#exit-zone.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+</style>
 </head>
 
 <body>
-  
+
+<!--- bottone chiusura --> 
+
+  <div id="exit-zone">✕</div>
   <div class="header">
     <h1>Porky's Game</h1>
     <p class="description">Benvenuti in Porky's Game! Un gioco per voi maiali, se non lo siete, lo diventerete.</p>
@@ -567,11 +595,11 @@ input[type="file"] {
     </div>
     <div class="controls-wrapper">
  <!-- Form per assegnare un nome a una pedina -->
-  <div class="name-form">
-    <input type="text" id="pedinaName" placeholder="Nome della pedina">
-    <button onclick="aggiungiPedina()">Aggiungi Giocatore</button>
-    <p class="warning" id="warningMessage"></p>
-  </div>
+  <form class="name-form" id="nameForm">
+  <input type="text" id="pedinaName" placeholder="Nome della pedina" autocomplete="off">
+  <button type="button" onclick="aggiungiPedina()">Aggiungi Giocatore</button>
+  <p class="warning" id="warningMessage"></p>
+  </form>
 </div>
   <div id="menu-partita" style="margin-top:15px;">
 <div>    
@@ -616,12 +644,36 @@ input[type="file"] {
 
 <button class="btn" onclick="estraiCarta()">ESTRAI</button>
 <button class="reset" onclick="resetPartita()">RESET</button>
-<button class="cancellaMazzo" onclick="refreshPagina()">CANCELLA MAZZO</button>
+<button class="cancellaMazzo" id="cancellaMazzoBtn">CANCELLA MAZZO</button>
 </div>
 
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>  
 <script>
+document.getElementById("cancellaMazzoBtn").addEventListener("click", () => {
+
+  customConfirm(
+    "Vuoi cancellare TUTTO il mazzo di carte?\n\n" +
+    "La partita e i giocatori NON verranno toccati."
+  ).then(ok => {
+
+    if (!ok) {
+      forzaFocusInput();
+      return;
+    }
+
+    // cancella SOLO carte
+    mazzo = [];
+    carteEstratte = [];
+    localStorage.removeItem("mazzo");
+
+    resetCartaVisuale();
+    aggiornaContatore();
+
+    customAlert("Mazzo cancellato correttamente.");
+  });
+
+});
 
 let mazzo = [];
 let carteEstratte = [];
@@ -698,7 +750,7 @@ imgInput.addEventListener("change", () => {
 function estraiCarta() {
   const disponibili = mazzo.filter(c => !c.estratta);
   if (!disponibili.length) {
-    alert("Tutte le carte sono state estratte!");
+    customAlert("Tutte le carte sono state estratte!");
     return;
   }
 
@@ -731,6 +783,18 @@ const board = document.querySelector('.board');
 const legend = document.querySelector('.legend');
 const caselle = document.querySelectorAll('.cell');
 const inputNome = document.getElementById("pedinaName");
+const nameForm = document.getElementById("nameForm");
+
+nameForm.addEventListener("submit", e => {
+  e.preventDefault();      // ⛔ BLOCCA IL RELOAD
+  aggiungiPedina();        // ✅ aggiunge il giocatore
+});
+
+function forzaFocusInput() {
+  if (!inputNome) return;
+  inputNome.focus({ preventScroll: true });
+}
+
 const suonoFine = new Audio("fine.mp3");
 suonoFine.volume = 0.7;
 const suoniPesca = [
@@ -920,6 +984,8 @@ function aggiungiPedina() {
   pedinaDiv.addEventListener("click", e => {
     e.stopPropagation();
     forzaTurno(nome);
+    inputNome.value = "";
+    inputNome.focus();  
   });
 
   const legendaItem = document.createElement("div");
@@ -973,11 +1039,17 @@ legendaItem.addEventListener("drop", e => {
   delBtn.onclick = () => eliminaPedina(nome);
   legendaItem.appendChild(delBtn);
 
-  legend.appendChild(legendaItem);
-  abilitaDragLegenda();
-  inputNome.value = "";
-  aggiornaTurno();
-  salvaPartita();
+ legend.appendChild(legendaItem);
+abilitaDragLegenda();
+
+/* 🔥 FORZA TURNO DOPO TUTTO */
+turnoIndex = pedine.length - 1;
+pedinaSelezionata = pedine[turnoIndex].name;
+inputNome.value = "";
+salvaPartita();
+
+// 🔥 FOCUS FORZATO POST-LOGICA
+setTimeout(forzaFocusInput, 0);
 }
 
 /* ================= SELEZIONE ================= */
@@ -1104,9 +1176,15 @@ function eliminaPedina(nome) {
 
 /* ================= DRAG & DROP ================= */
 document.addEventListener("dragstart", e => {
+  if (!e.target || !e.target.classList) return;
   if (!e.target.classList.contains("pedina")) return;
-  if (e.target.dataset.name !== pedinaSelezionata) e.preventDefault();
-  else e.dataTransfer.setData("text", e.target.dataset.name);
+
+  if (e.target.dataset.name !== pedinaSelezionata) {
+    e.preventDefault();
+    return;
+  }
+
+  e.dataTransfer.setData("text/plain", e.target.dataset.name);
 });
 
 caselle.forEach(cell => {
@@ -1301,58 +1379,58 @@ legend.appendChild(legendaItem);
 
 /* ================= RESET ================= */
 resetBtn.addEventListener("click", () => {
-  if (!confirm("Sei sicuro di voler resettare la partita?")) return;
 
-  document.querySelectorAll(".pedina").forEach(p => {
-    caselle[0].appendChild(p);
-    p.style.top = "2px";
-    p.style.right = "2px";
-    p.style.left = "auto";
-    p.style.bottom = "auto";
-  });
+  customConfirm("Sei sicuro di voler resettare la partita?")
+    .then(ok => {
 
-  turnoIndex = 0;
+      if (!ok) {
+        forzaFocusInput();
+        return;
+      }
 
-  if (pedine.length > 0) {
-    aggiornaTurno(); // 🔥 RIATTIVA PEDINA + LEGENDA
-  }
+      document.querySelectorAll(".pedina").forEach(p => {
+        caselle[0].appendChild(p);
+        p.style.top = "2px";
+        p.style.right = "2px";
+        p.style.left = "auto";
+        p.style.bottom = "auto";
+      });
 
-  resetDado();      // 🔥 RIATTIVA BOTTONE
-  salvaPartita();
+      turnoIndex = 0;
+
+      if (pedine.length > 0) {
+        aggiornaTurno(); // 🔥 RIATTIVA PEDINA + LEGENDA
+      }
+
+      resetDado();      // 🔥 RIATTIVA BOTTONE
+      salvaPartita();
+    });
+
 });
 
 /* ================= NUOVA PARTITA ================= */
-nuovaPartitaBtn.addEventListener("click", () => {
-  if (!confirm("Sei sicuro di iniziare una nuova partita? Tutti i dati saranno cancellati!")) return;
+nuovaPartitaBtn.addEventListener("click", async () => {
 
-  document.querySelectorAll(".pedina").forEach(p => p.remove());
-  document.querySelectorAll(".pedina-name").forEach(l => l.remove());
+  const conferma = customConfirm(
+    "Vuoi iniziare una NUOVA partita?\n\n" +
+    "⚠️ Tutti i dati della partita corrente verranno cancellati." +
+    "✔ OK = Nuova partita" +
+    "❌ Annulla = Continua la precedente"
+  ).then(conferma => {
 
-  pedine = [];
-  pedinaSelezionata = null;
-  turnoIndex = 0;
-  warningMessage.textContent = "";
-  coloriDisponibili = [...colors].sort(() => Math.random() - 0.5);
+  if (!conferma) {
+    forzaFocusInput();
+    return;
+  }
 
-  localStorage.removeItem("porkysGame");
-  alert("Nuova partita avviata!");
-  if (pedine.length > 0) {
-  turnoIndex = 0;
-  aggiornaTurno();
-}
- // 🔥 reset completo stato dado
-dadoGiaLanciato = false;
-dadoAbilitato = false;
+  avviaNuovaPartitaSilenziosa();
 
-dice.className = "dice";
-diceButton.style.display = "inline-block";
-diceButton.disabled = false;
+  customAlert("Nuova partita avviata!");
 
-// forza repaint (necessario in questo flusso)
-diceButton.offsetHeight;
-resetDado();
-salvaPartita();
 });
+});
+
+
 function avviaNuovaPartitaSilenziosa() {
   document.querySelectorAll(".pedina").forEach(p => p.remove());
   document.querySelectorAll(".pedina-name").forEach(l => l.remove());
@@ -1372,31 +1450,43 @@ function avviaNuovaPartitaSilenziosa() {
   resetDado();
 }
 /* ================= EVENTI ================= */
-inputNome.addEventListener("keydown", e => {
-  if (e.key === "Enter") aggiungiPedina();
-});
-
 window.addEventListener("load", () => {
-  resetDado(); // fondamentale
+
+  resetDado();
 
   const partitaSalvata = localStorage.getItem("porkysGame");
+  if (!partitaSalvata) {
+    forzaFocusInput();
+    return;
+  }
 
-  if (partitaSalvata) {
-    const nuova = confirm(
-      "Vuoi iniziare una NUOVA partita?\n\n" +
-      "✔ OK = Nuova partita\n" +
-      "❌ Annulla = Continua la precedente"
-    );
+  customConfirm(
+    "Vuoi iniziare una NUOVA partita?\n\n" +
+    "✔ OK = Nuova partita\n" +
+    "❌ Annulla = Continua la precedente"
+  ).then(nuova => {
 
     if (nuova) {
       avviaNuovaPartitaSilenziosa();
     } else {
       caricaPartita();
     }
-  }
+
+    forzaFocusInput();
+  });
 });
 
-window.addEventListener("beforeunload", salvaPartita);
+function forzaFocusInput() {
+  const input = document.getElementById("pedinaName");
+  if (input) {
+    input.focus();
+  }
+}
+window.addEventListener("beforeunload", () => {
+  try {
+    salvaPartita();
+  } catch {}
+});
 
 window.lanciaDado = lanciaDado;
 
@@ -1412,52 +1502,148 @@ function aggiornaOrdineGiocatoriDaLegenda() {
   aggiornaTurno();
   salvaPartita();
 }
-function refreshPagina() {
-  location.reload();
-}
+
 /* ================= TORNA ALLA HOME ================= */
 document.getElementById("backBtn").addEventListener("click", () => {
   window.location.href = "./index.html";
 });
-
 </script>
 <div id="fakeWindow" class="fake-window hidden">
   <div id="fakeWindowContent"></div>
 </div>
 <script>
-const fakeWindow = document.getElementById("fakeWindow");
-const fakeWindowContent = document.getElementById("fakeWindowContent");
+let exitZoneActive = false;
+window.addEventListener("mousemove", e => {
+  if (exitZoneActive) return;
 
-function mostraFakeWindowDaCella(cella) {
-  if (!cella || !fakeWindow || !fakeWindowContent) return;
+  if (e.clientX > window.innerWidth - 80 && e.clientY < 80) {
+    exitZoneActive = true;
 
-  const testo = cella.textContent.trim();
-  if (!testo) return;
+    const btn = document.getElementById("exit-zone");
+    btn.classList.add("active");
 
-  fakeWindowContent.textContent = testo;
-  fakeWindow.classList.remove("hidden");
-}
+    setTimeout(() => {
+      btn.classList.remove("active");
+      exitZoneActive = false;
+    }, 3000);
+  }
+});
 
-function nascondiFakeWindow() {
-  fakeWindow.classList.add("hidden");
-}
 
-// Hover mouse
-document.querySelectorAll(".cell").forEach(cell => {
-  cell.addEventListener("mouseenter", () => {
-    mostraFakeWindowDaCella(cell);
-  });
-
-  cell.addEventListener("mouseleave", () => {
-    nascondiFakeWindow();
-  });
+document.getElementById('exit-zone').addEventListener('click', () => {
+  if (window.exitApp) {
+    window.exitApp(); // Electron
+  } else {
+    window.close(); // browser
+  }
 });
 </script>
 <script>
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("./sw.js");
+function customConfirm(message) {
+  return new Promise(function (resolve) {
+
+    const overlay = document.getElementById("modalOverlay");
+    const text = document.getElementById("modalText");
+    const okBtn = document.getElementById("modalOk");
+    const cancelBtn = document.getElementById("modalCancel");
+
+    text.textContent = message;
+    overlay.style.display = "flex";
+
+    okBtn.focus();
+
+    function close(result) {
+      overlay.style.display = "none";
+
+      okBtn.removeEventListener("click", onOk);
+      cancelBtn.removeEventListener("click", onCancel);
+      document.removeEventListener("keydown", onKey);
+
+      resolve(result);
+    }
+
+    function onOk() {
+      close(true);
+    }
+
+    function onCancel() {
+      close(false);
+    }
+
+    function onKey(e) {
+      if (e.key === "Enter") close(true);
+      if (e.key === "Escape") close(false);
+    }
+
+    okBtn.addEventListener("click", onOk);
+    cancelBtn.addEventListener("click", onCancel);
+    document.addEventListener("keydown", onKey);
+  });
 }
 </script>
+<script>
+function customAlert(message) {
+  return new Promise(function (resolve) {
+
+    const overlay = document.getElementById("modalOverlay");
+    const text = document.getElementById("modalText");
+    const okBtn = document.getElementById("modalOk");
+    const cancelBtn = document.getElementById("modalCancel");
+
+    cancelBtn.style.display = "none";
+    text.textContent = message;
+    overlay.style.display = "flex";
+
+    okBtn.focus();
+
+    function close() {
+      overlay.style.display = "none";
+      cancelBtn.style.display = "inline-block";
+
+      okBtn.removeEventListener("click", onOk);
+      document.removeEventListener("keydown", onKey);
+
+      resolve();
+    }
+
+    function onOk() {
+      close();
+    }
+
+    function onKey(e) {
+      if (e.key === "Enter" || e.key === "Escape") close();
+    }
+
+    okBtn.addEventListener("click", onOk);
+    document.addEventListener("keydown", onKey);
+  });
+}
+</script>
+
+<div id="modalOverlay" style="
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.6);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:10000;
+">
+  <div style="
+    background:#f9e0a7;
+    border:4px solid #502369;
+    border-radius:14px;
+    padding:25px;
+    min-width:280px;
+    text-align:center;
+    font-size:18px;
+    color:#502369;
+  ">
+    <div id="modalText" style="margin-bottom:20px;"></div>
+    <button id="modalOk" class="btn">OK</button>
+    <button id="modalCancel" class="reset">Annulla</button>
+  </div>
+</div>
 </body>
 
 
