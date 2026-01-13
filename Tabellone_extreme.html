@@ -37,8 +37,8 @@
 }
 
 h1 {
-  margin-top: 20px;
-  font-size: 36px;
+  margin-top: 18px;
+  font-size: 26px;
   color: #502369;
 }
 
@@ -134,8 +134,8 @@ h1 {
     }
 
     .description {
-      font-size: 18px;
-      margin: 10px;
+      font-size: 16px;
+      margin: 6px;
       color: #333;
       font-weight: bold;
     }
@@ -628,7 +628,7 @@ input[type="file"] {
      <h1 style="font-size:22px;">Carte</h1>
 
 <div>
-  <button class="btn" onclick="document.getElementById('zipInput').click()">Carica mazzo</button>
+<button class="btn" onclick="apriZip()">Carica mazzo</button>
   <button class="btn" onclick="document.getElementById('imgInput').click()">Aggiungi carte</button>
 
 
@@ -648,7 +648,7 @@ input[type="file"] {
 </div>
 
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>  
+<script src="js/jszip.min.js"></script>  
 <script>
 document.getElementById("cancellaMazzoBtn").addEventListener("click", () => {
 
@@ -696,8 +696,14 @@ function resetCartaVisuale() {
 
 /* ----------- ZIP ----------- */
 zipInput.addEventListener("change", async () => {
-  const file = zipInput.files[0];
-  if (!file) return;
+const file = zipInput.files[0];
+if (!file) return;
+
+if (!file.name.toLowerCase().endsWith(".zip")) {
+  customAlert("I file RAR non sono supportati.\nUsa un file ZIP.");
+  zipInput.value = "";
+  return;
+}
 
   const zip = await JSZip.loadAsync(file);
   mazzo = [];
@@ -1387,7 +1393,7 @@ resetBtn.addEventListener("click", () => {
         forzaFocusInput();
         return;
       }
-
+      resetPartita();
       document.querySelectorAll(".pedina").forEach(p => {
         caselle[0].appendChild(p);
         p.style.top = "2px";
@@ -1414,8 +1420,8 @@ nuovaPartitaBtn.addEventListener("click", async () => {
   const conferma = customConfirm(
     "Vuoi iniziare una NUOVA partita?\n\n" +
     "⚠️ Tutti i dati della partita corrente verranno cancellati." +
-    "✔ OK = Nuova partita" +
-    "❌ Annulla = Continua la precedente"
+    "❌ SI = Nuova partita" +
+    "✔ NO = Continua la precedente"
   ).then(conferma => {
 
   if (!conferma) {
@@ -1462,12 +1468,13 @@ window.addEventListener("load", () => {
 
   customConfirm(
     "Vuoi iniziare una NUOVA partita?\n\n" +
-    "✔ OK = Nuova partita\n" +
-    "❌ Annulla = Continua la precedente"
+    "❌ SI = Nuova partita\n" +
+    "✔ NO = Continua la precedente"
   ).then(nuova => {
 
     if (nuova) {
       avviaNuovaPartitaSilenziosa();
+      customAlert("Nuova partita avviata!");
     } else {
       caricaPartita();
     }
@@ -1539,14 +1546,18 @@ document.getElementById('exit-zone').addEventListener('click', () => {
 });
 </script>
 <script>
-function customConfirm(message) {
+  function customConfirm(message) {
   return new Promise(function (resolve) {
 
     const overlay = document.getElementById("modalOverlay");
     const text = document.getElementById("modalText");
     const okBtn = document.getElementById("modalOk");
     const cancelBtn = document.getElementById("modalCancel");
+    const kBtn = document.getElementById("notifica");
 
+    okBtn.style.display = "inline-block";
+    cancelBtn.style.display = "inline-block";
+    kBtn.style.display = "none";
     text.textContent = message;
     overlay.style.display = "flex";
 
@@ -1589,18 +1600,23 @@ function customAlert(message) {
     const text = document.getElementById("modalText");
     const okBtn = document.getElementById("modalOk");
     const cancelBtn = document.getElementById("modalCancel");
+    const kBtn = document.getElementById("notifica");
 
+    okBtn.style.display = "none";
     cancelBtn.style.display = "none";
+    kBtn.style.display = "inline-block";
     text.textContent = message;
     overlay.style.display = "flex";
 
-    okBtn.focus();
+    kBtn.focus();
 
     function close() {
       overlay.style.display = "none";
+      okBtn.style.display = "inline-block";
       cancelBtn.style.display = "inline-block";
+      kBtn.style.display = "none";
 
-      okBtn.removeEventListener("click", onOk);
+      kBtn.removeEventListener("click", onOk);
       document.removeEventListener("keydown", onKey);
 
       resolve();
@@ -1614,7 +1630,7 @@ function customAlert(message) {
       if (e.key === "Enter" || e.key === "Escape") close();
     }
 
-    okBtn.addEventListener("click", onOk);
+    kBtn.addEventListener("click", onOk);
     document.addEventListener("keydown", onKey);
   });
 }
@@ -1640,10 +1656,17 @@ function customAlert(message) {
     color:#502369;
   ">
     <div id="modalText" style="margin-bottom:20px;"></div>
-    <button id="modalOk" class="btn">OK</button>
-    <button id="modalCancel" class="reset">Annulla</button>
+    <button id="modalOk" class="reset">SI</button>
+    <button id="modalCancel" class="btn">NO</button>
+    <button id="notifica" class="btn">OK</button>
   </div>
 </div>
+<script>
+function apriZip() {
+  zipInput.value = "";   // 🔑 reset fondamentale
+  zipInput.click();
+}
+</script>
 </body>
 
 
