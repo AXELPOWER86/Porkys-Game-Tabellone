@@ -1349,6 +1349,91 @@ const COLS = 8;
 const ROWS = 7;
 const TOTAL = COLS * ROWS;
 
+  function leggiEffettoCasella(cella) {
+  const testo = cella.textContent.toUpperCase();
+
+  // SALTA AVANTI
+  let matchAvanti = testo.match(/SALTA AVANTI DI (\d+)/);
+  if (matchAvanti) {
+    return { tipo: "avanti", passi: parseInt(matchAvanti[1], 10) };
+  }
+
+  // TORNA INDIETRO
+  let matchIndietro = testo.match(/TORNA INDIETRO DI (\d+)/);
+  if (matchIndietro) {
+    return { tipo: "indietro", passi: parseInt(matchIndietro[1], 10) };
+  }
+
+  return null; // nessun effetto
+}
+function muoviPedina(passi) {
+  const pedinaDiv = document.querySelector(
+    `.pedina[data-name="${pedinaSelezionata}"]`
+  );
+  if (!pedinaDiv) return;
+
+  const celleArray = Array.from(caselle);
+
+  // posizione attuale
+  let cellIndex = celleArray.indexOf(pedinaDiv.parentElement);
+  let posizione = percorsoSerpente.indexOf(cellIndex);
+
+  if (posizione < 0) posizione = 0;
+
+  const direzione = passi >= 0 ? 1 : -1;
+  const passiAssoluti = Math.abs(passi);
+  let step = 0;
+
+  const movimento = setInterval(() => {
+    posizione =
+      (posizione + direzione + percorsoSerpente.length) %
+      percorsoSerpente.length;
+
+    const indexCella = percorsoSerpente[posizione];
+    const targetCell = celleArray[indexCella];
+
+    if (!targetCell) {
+      clearInterval(movimento);
+      return;
+    }
+
+    targetCell.appendChild(pedinaDiv);
+    pedinaDiv.style.top = "2px";
+    pedinaDiv.style.right = "2px";
+    pedinaDiv.style.left = "auto";
+    pedinaDiv.style.bottom = "auto";
+
+    step++;
+
+    if (step >= passiAssoluti) {
+      clearInterval(movimento);
+
+      controllaCasellaSuono(pedinaDiv);
+      mostraFakeWindowDaCella(targetCell);
+
+      const effetto = leggiEffettoCasella(targetCell);
+
+      if (effetto) {
+        // ⏳ attesa breve per rendere leggibile l’effetto
+        setTimeout(() => {
+          muoviPedina(
+            effetto.tipo === "avanti"
+              ? effetto.passi
+              : -effetto.passi
+          );
+        }, 600);
+      } else {
+        // 🔚 FINE MOVIMENTO → PASSA IL TURNO
+        prossimoTurno();
+        aggiornaTurno();
+        aggiornaPosizioniPedineStessaCasella();
+        salvaPartita();
+      }
+    }
+  }, 300);
+}
+  
+/* 
 function muoviPedina(passi) {
   const pedinaDiv = document.querySelector(
     `.pedina[data-name="${pedinaSelezionata}"]`
@@ -1397,7 +1482,7 @@ function muoviPedina(passi) {
       salvaPartita();
     }
   }, 300);
-}
+} *\
 
 function resetDado() {
   // reset logico
@@ -1771,3 +1856,4 @@ function apriZip() {
 
 
 </html>
+
