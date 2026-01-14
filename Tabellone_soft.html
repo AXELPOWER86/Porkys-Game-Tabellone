@@ -1432,57 +1432,6 @@ function muoviPedina(passi) {
     }
   }, 300);
 }
-  
-/* 
-function muoviPedina(passi) {
-  const pedinaDiv = document.querySelector(
-    `.pedina[data-name="${pedinaSelezionata}"]`
-  );
-  if (!pedinaDiv) return;
-
-  const celleArray = Array.from(caselle);
-
-  let cellIndex = celleArray.indexOf(pedinaDiv.parentElement);
-  let posizione = percorsoSerpente.indexOf(cellIndex);
-
-  if (posizione < 0 || posizione >= percorsoSerpente.length) {
-    posizione = 0;
-  }
-
-  let step = 0;
-
-  const movimento = setInterval(() => {
-    posizione = (posizione + 1) % percorsoSerpente.length;
-
-    const indexCella = percorsoSerpente[posizione];
-    const targetCell = celleArray[indexCella];
-
-    if (!targetCell) {
-      clearInterval(movimento);
-      return;
-    }
-
-    targetCell.appendChild(pedinaDiv);
-    pedinaDiv.style.top = "2px";
-    pedinaDiv.style.right = "2px";
-    pedinaDiv.style.left = "auto";
-    pedinaDiv.style.bottom = "auto";
-
-    step++;
-
-    if (step >= passi) {
-      clearInterval(movimento);
-
-      controllaCasellaSuono(pedinaDiv);
-      mostraFakeWindowDaCella(targetCell);
-
-      prossimoTurno();
-      aggiornaTurno();
-      aggiornaPosizioniPedineStessaCasella();
-      salvaPartita();
-    }
-  }, 300);
-} *\
 
 function resetDado() {
   // reset logico
@@ -1856,4 +1805,5 @@ function apriZip() {
 
 
 </html>
+
 
