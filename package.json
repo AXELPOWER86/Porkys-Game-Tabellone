@@ -1,0 +1,35 @@
+{
+  "name": "Porkys-Game",
+  "version": "1.0.0",
+  "description": "Porky's Game",
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "electron .",
+    "build:win": "electron-builder --win --x64"
+  },
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+  "appId": "com.axelpower86.porkys.game",
+  "productName": "Porky's Game",
+  "directories": {
+    "buildResources": "."
+  },
+  "win": {
+    "icon": "icon.ico",
+    "target": [
+      "nsis",
+      "portable"
+    ]
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true
+  }
+}
+}
+
