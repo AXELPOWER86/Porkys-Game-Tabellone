@@ -656,7 +656,7 @@ input[type="file"] {
 <button class="reset" onclick="resetPartita()">RESET</button>
 <button class="cancellaMazzo" id="cancellaMazzoBtn">CANCELLA MAZZO</button>
 </div>
-
+</div>
 
 <script src="js/jszip.min.js"></script>  
 <script src="js/localforage.min.js"></script>
@@ -1315,7 +1315,14 @@ function forzaTurno(nomeCliccato) {
 }
 
 /* ================= DADO ================= */
-function lanciaDado() {
+ function lanciaDado() {
+          // Controlla se esiste una pedina con la classe 'highlighted-pedina' (quella arancione)
+        const pedinaAttiva = document.querySelector(".highlighted-pedina");
+  
+        if (!pedinaAttiva) {
+         customAlert("⚠️ Devi prima selezionare il giocatore che comincia la partita per lanciare il dado!");
+          return; // Blocca il lancio del dado se non selezioni il primo giocatore
+         } 
   if (dadoInAnimazione) return;
 
   dadoInAnimazione = true;
