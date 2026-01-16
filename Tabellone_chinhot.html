@@ -29,11 +29,10 @@
       rgba(215, 175, 90, 0.85),
       rgba(215, 175, 90, 0.85)
     ),
-    url("images/Nuovo_logo_chinhot.png");
-
-  background-repeat: repeat;
+    url("images/logo_splash.png");
+  background-repeat: no-repeat;
   background-position: center;
-  background-size: contain;
+  background-size: cover;
 }
 
 h1 {
@@ -660,30 +659,38 @@ input[type="file"] {
 
 
 <script src="js/jszip.min.js"></script>  
+<script src="js/localforage.min.js"></script>
 <script>
-document.getElementById("cancellaMazzoBtn").addEventListener("click", () => {
 
+/* ex localstorage carte */ 
+localforage.config({
+  name: 'PorkysGame',
+  storeName: 'mazzo_carte' // Il "cassetto" dove teniamo le carte
+});  
+/* 3. Aggiorna la cancellazione del mazzo */
+document.getElementById("cancellaMazzoBtn").addEventListener("click", () => {
   customConfirm(
     "Vuoi cancellare TUTTO il mazzo di carte?\n\n" +
     "La partita e i giocatori NON verranno toccati."
-  ).then(ok => {
+  ).then(async (ok) => { // Nota l'async qui
 
     if (!ok) {
       forzaFocusInput();
       return;
     }
 
-    // cancella SOLO carte
+    // Cancella dalla RAM
     mazzo = [];
     carteEstratte = [];
-    localStorage.removeItem("mazzo");
+    
+    // Cancella dal Database
+    await localforage.removeItem("mazzo");
 
     resetCartaVisuale();
     aggiornaContatore();
 
     customAlert("Mazzo cancellato correttamente.");
   });
-
 });
 
 let mazzo = [];
@@ -697,13 +704,34 @@ const imgInput = document.getElementById("imgInput");
 function aggiornaContatore() {
   contatore.innerText = mazzo.filter(c => !c.estratta).length;
 }
-
-function salvaCarte() {
-  const stato = mazzo.map(c => ({
-    nome: c.nome,
-    estratta: c.estratta
-  }));
-  localStorage.setItem("mazzo", JSON.stringify(stato));
+/* 1. Nuova funzione salvaCarte (Asincrona) */
+async function salvaCarte() {
+  try {
+    // Salviamo tutto il mazzo in IndexedDB tramite localForage
+    await localforage.setItem("mazzo", mazzo);
+    console.log("Carte salvate correttamente nel database.");
+  } catch (err) {
+    console.error("Errore durante il salvataggio:", err);
+    customAlert("Errore nel salvataggio delle carte (memoria piena o errore disco).");
+  }
+}
+async function caricaMazzoAllAvvio() {
+  try {
+    const mazzoSalvato = await localforage.getItem("mazzo");
+    
+    if (mazzoSalvato && Array.isArray(mazzoSalvato) && mazzoSalvato.length > 0) {
+      mazzo = mazzoSalvato;
+      aggiornaContatore();
+      resetCartaVisuale();
+      console.log(`Caricate ${mazzo.length} carte dal database.`);
+    } else {
+      console.log("Nessun mazzo trovato in memoria.");
+      mazzo = [];
+    }
+  } catch (err) {
+    console.error("Errore nel caricamento:", err);
+    mazzo = [];
+  }
 }
 
 function resetCartaVisuale() {
@@ -725,26 +753,25 @@ zipInput.addEventListener("change", async () => {
   const files = [...zipInput.files];
   if (!files.length) return;
 
-  for (const file of files) {
+  // Mostra un caricamento visivo (opzionale ma consigliato)
+  const btn = document.querySelector(".btn[onclick='apriZip()']");
+  const testoOriginale = btn.textContent;
+  btn.textContent = "Caricamento in corso...";
+  btn.disabled = true;
 
+  for (const file of files) {
     if (!file.name.toLowerCase().endsWith(".zip")) {
       customAlert(`Il file ${file.name} non è uno ZIP valido`);
       continue;
     }
 
     const zip = await JSZip.loadAsync(file);
-
     const immagini = Object.values(zip.files)
-      .filter(f => !f.dir && /\.(png|jpe?g|webp)$/i.test(f.name))
-      .sort((a, b) => a.name.localeCompare(b.name));
+      .filter(f => !f.dir && /\.(png|jpe?g|webp)$/i.test(f.name));
 
     for (const img of immagini) {
-
-      // evita duplicati (stesso nome file)
       if (mazzo.some(c => c.nome === img.name)) continue;
-
       const base64 = await img.async("base64");
-
       mazzo.push({
         nome: img.name,
         img: `data:image/png;base64,${base64}`,
@@ -752,37 +779,55 @@ zipInput.addEventListener("change", async () => {
       });
     }
   }
-  ripristinaStatoCarte(); 
+  
   aggiornaContatore();
   resetCartaVisuale();
-  salvaCarte();
+  
+  // ATTENDIAMO che il salvataggio sia finito
+  await salvaCarte();
+  
   zipInput.value = "";
+  btn.textContent = testoOriginale;
+  btn.disabled = false;
+  customAlert("Mazzo caricato e salvato!");
 });
 
-
 /* ----------- IMMAGINI SINGOLE ----------- */
-imgInput.addEventListener("change", () => {
+imgInput.addEventListener("change", async () => { // Aggiunto async
   const files = imgInput.files;
+  if (!files.length) return;
+
+  const promises = [];
 
   for (const file of files) {
     if (!file.type.startsWith("image/")) continue;
     if (mazzo.some(c => c.nome === file.name)) continue;
 
-    const reader = new FileReader();
-    reader.onload = e => {
-      mazzo.push({
-        nome: file.name,
-        img: e.target.result,
-        estratta: false
-      });
-     	ripristinaStatoCarte(); 
- 	aggiornaContatore();
-  	resetCartaVisuale();
-     	salvaCarte();
-    };
-    reader.readAsDataURL(file);
+    // Creiamo una promessa per ogni lettura file
+    const p = new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        mazzo.push({
+          nome: file.name,
+          img: e.target.result,
+          estratta: false
+        });
+        resolve();
+      };
+      reader.readAsDataURL(file);
+    });
+    promises.push(p);
   }
 
+  // Aspettiamo che TUTTE le immagini siano state lette
+  await Promise.all(promises);
+
+  aggiornaContatore();
+  resetCartaVisuale();
+  
+  // Salviamo nel DB
+  await salvaCarte();
+  
   imgInput.value = "";
 });
 
@@ -1593,19 +1638,30 @@ function avviaNuovaPartitaSilenziosa() {
   warningMessage.textContent = "";
   coloriDisponibili = [...colors].sort(() => Math.random() - 0.5);
 
-  localStorage.removeItem("porkysGame");
+  localStorage.removeItem("porkysGame"); // Questo rimane per le pedine (sono leggere)
 
-  // reset dado
+  // Reset Dado
   dice.className = "dice";
   diceButton.style.display = "inline-block";
   diceButton.disabled = false;
   resetDado();
+
+  // Reset Mazzo (Database)
+  mazzo = [];
+  carteEstratte = [];
+  resetCartaVisuale();
+  aggiornaContatore();
+  localforage.removeItem("mazzo"); // Rimuove le carte pesanti
 }
 /* ================= EVENTI ================= */
 window.addEventListener("load", () => {
 
   resetDado();
 
+  // Carica le carte dal database ad alta capacità
+  caricaMazzoAllAvvio(); 
+
+  // Carica il resto del gioco (pedine) dal localstorage normale
   const partitaSalvata = localStorage.getItem("porkysGame");
   if (!partitaSalvata) {
     forzaFocusInput();
