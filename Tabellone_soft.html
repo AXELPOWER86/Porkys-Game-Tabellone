@@ -640,11 +640,11 @@ input[type="file"] {
      <h1 style="font-size:22px;">Carte</h1>
 
 <div>
-  <button id="caricaMazzoBtn">Carica Mazzo</button>
+  <button class="btn" onclick="apriZip()">Carica mazzo</button>
   <button class="btn" onclick="document.getElementById('imgInput').click()">Aggiungi carte</button>
 
 
- <input id="zipInput" type="file" accept=".zip,application/zip" multiple>
+  <input type="file" id="zipInput" accept=".zip" multiple>
   <input type="file" id="imgInput" accept="image/*" multiple>
 </div>
 
@@ -663,17 +663,7 @@ input[type="file"] {
 <script src="js/jszip.min.js"></script>  
 <script src="js/localforage.min.js"></script>
 <script>
-const caricaMazzoBtn = document.getElementById("caricaMazzoBtn");
-const zipInput = document.getElementById("zipInput");
 
-caricaMazzoBtn.addEventListener("click", () => {
-  zipInput.value = "";
-  if (zipInput.showPicker) {
-    zipInput.showPicker();
-  } else {
-    zipInput.click();
-  }
-});
 /* ex localstorage carte */ 
 localforage.config({
   name: 'PorkysGame',
@@ -1892,6 +1882,5 @@ function apriZip() {
 
 
 </html>
-
 
 
