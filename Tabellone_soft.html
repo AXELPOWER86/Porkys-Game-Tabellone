@@ -755,6 +755,13 @@ zipInput.addEventListener("change", async () => {
   const files = [...zipInput.files];
   if (!files.length) return;
 
+  const nonZip = files.filter(f => !f.name.toLowerCase().endsWith(".zip"));
+  if (nonZip.length > 0) {
+    customAlert("⚠️ Puoi caricare SOLO file ZIP per il mazzo.");
+    zipInput.value = "";
+    return;
+  }
+
   // Mostra un caricamento visivo (opzionale ma consigliato)
   const btn = document.querySelector(".btn[onclick='apriZip()']");
   const testoOriginale = btn.textContent;
@@ -795,9 +802,16 @@ zipInput.addEventListener("change", async () => {
 });
 
 /* ----------- IMMAGINI SINGOLE ----------- */
-imgInput.addEventListener("change", async () => { // Aggiunto async
-  const files = imgInput.files;
+imgInput.addEventListener("change", async () => {
+  const files = [...imgInput.files];
   if (!files.length) return;
+
+  const nonImmagini = files.filter(f => !f.type.startsWith("image/"));
+  if (nonImmagini.length > 0) {
+    customAlert("⚠️ Puoi aggiungere SOLO file immagine (PNG, JPG, WEBP).");
+    imgInput.value = "";
+    return;
+  }
 
   const promises = [];
 
