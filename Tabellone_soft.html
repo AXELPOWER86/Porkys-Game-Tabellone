@@ -714,22 +714,33 @@ input[type="file"] {
 </div>
 
 <script>
-/* =================== VARIABILI BASE =================== */
+/* ===================================================
+   VARIABILI E CONFIG
+=================================================== */
 let mazzo = [];
 let carteEstratte = [];
 
-/* IndexedDB via localforage */
 localforage.config({
   name: 'PorkysGame',
   storeName: 'mazzo_carte'
 });
 
-/* =================== INIT ALL'AVVIO =================== */
+/* conteggi caricamento */
+let cntNuove = 0;
+let cntDuplicate = 0;
+let cntSaltate = 0;
+let cntTotali = 0;
+
+/* ===================================================
+   AVVIO
+=================================================== */
 document.addEventListener("DOMContentLoaded", () => {
   caricaMazzoAllAvvio();
 });
 
-/* =================== ZIP =================== */
+/* ===================================================
+   ZIP
+=================================================== */
 function apriZip() {
   zipInput.value = "";
   zipInput.click();
@@ -739,38 +750,48 @@ zipInput.addEventListener("change", async () => {
   const files = [...zipInput.files];
   if (!files.length) return;
 
-  const invalid = files.filter(f => !f.name.toLowerCase().endsWith(".zip"));
-  if (invalid.length) {
-    customAlert("Puoi caricare SOLO file ZIP.");
-    return;
-  }
+  cntNuove = 0; cntDuplicate = 0; cntSaltate = 0; cntTotali = 0;
 
   const btn = document.querySelector(".btn[onclick='apriZip()']");
-  const original = btn.textContent;
+  const originalTxt = btn.textContent;
   btn.disabled = true;
   btn.textContent = "Caricamento...";
 
   for (const file of files) {
+    if (!file.name.toLowerCase().endsWith(".zip")) {
+      cntSaltate++; continue;
+    }
+
     const zip = await JSZip.loadAsync(file);
-    const imgs = Object.values(zip.files)
+    const entries = Object.values(zip.files)
       .filter(f => !f.dir && /\.(png|jpe?g|webp)$/i.test(f.name));
 
-    for (const img of imgs) {
+    for (const img of entries) {
+      cntTotali++;
       const base64 = await img.async("base64");
       const data = `data:image/png;base64,${base64}`;
       const hash = await generaHash(data);
-      pushCarta(hash, data);
+      pushCarta(hash, data, img.name);
     }
   }
 
   await salvaCarte();
   aggiornaContatore();
   btn.disabled = false;
-  btn.textContent = original;
-  customAlert("Mazzo caricato!");
+  btn.textContent = originalTxt;
+
+  customAlert(
+    `Caricamento completato!\n\n` +
+    `Nuove: ${cntNuove}\n` +
+    `Duplicate: ${cntDuplicate}\n` +
+    `Saltate (non immagini): ${cntSaltate}\n` +
+    `Totale input: ${cntTotali}`
+  );
 });
 
-/* =================== POPUP AGGIUNTA CARTA =================== */
+/* ===================================================
+   POPUP SCELTA (Aggiungi Carte)
+=================================================== */
 btnImg.addEventListener("click", () => {
   popupAddOverlay.style.display = "flex";
 });
@@ -791,83 +812,144 @@ btnChooseFolder.addEventListener("click", () => {
   folderInput.click();
 });
 
-/* =================== INPUT IMMAGINI =================== */
+/* ===================================================
+   FILE SINGOLI
+=================================================== */
 fileInput.addEventListener("change", async () => {
   const files = [...fileInput.files];
   if (!files.length) return;
 
+  cntNuove = 0; cntDuplicate = 0; cntSaltate = 0; cntTotali = 0;
+
   let pending = files.length;
   for (const f of files) {
     if (!f.type.startsWith("image/")) {
-      pending--;
-      continue;
+      cntSaltate++; pending--; continue;
     }
+
     const reader = new FileReader();
     reader.onload = async e => {
+      cntTotali++;
       const data = e.target.result;
       const hash = await generaHash(data);
-      pushCarta(hash, data);
+      pushCarta(hash, data, f.name);
       pending--;
       if (pending === 0) {
         await salvaCarte();
         aggiornaContatore();
-        customAlert("Carte caricate!");
+        customAlert(
+          `Caricamento completato!\n\n` +
+          `Nuove: ${cntNuove}\n` +
+          `Duplicate: ${cntDuplicate}\n` +
+          `Saltate (non immagini): ${cntSaltate}\n` +
+          `Totale input: ${cntTotali}`
+        );
       }
     };
     reader.readAsDataURL(f);
   }
 });
 
-/* =================== INPUT CARTELLE =================== */
+/* ===================================================
+   CARTELLE
+=================================================== */
 folderInput.addEventListener("change", async () => {
   const files = [...folderInput.files];
   if (!files.length) return;
 
+  cntNuove = 0; cntDuplicate = 0; cntSaltate = 0; cntTotali = 0;
+
   let pending = files.length;
   for (const f of files) {
     if (!f.type.startsWith("image/")) {
-      pending--;
-      continue;
+      cntSaltate++; pending--; continue;
     }
+
     const reader = new FileReader();
     reader.onload = async e => {
+      cntTotali++;
       const data = e.target.result;
       const hash = await generaHash(data);
-      pushCarta(hash, data);
+      pushCarta(hash, data, f.name);
       pending--;
       if (pending === 0) {
         await salvaCarte();
         aggiornaContatore();
-        customAlert("Carte caricate!");
+        customAlert(
+          `Caricamento completato!\n\n` +
+          `Nuove: ${cntNuove}\n` +
+          `Duplicate: ${cntDuplicate}\n` +
+          `Saltate (non immagini): ${cntSaltate}\n` +
+          `Totale input: ${cntTotali}`
+        );
       }
     };
     reader.readAsDataURL(f);
   }
 });
 
-/* =================== HASH MD5 =================== */
+/* ===================================================
+   HASH (Dedup contenuto)
+=================================================== */
 function generaHash(dataURL) {
   return crypto.subtle.digest("SHA-256", new TextEncoder().encode(dataURL))
-    .then(buf => Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,"0")).join(""));
+    .then(buf =>
+      Array.from(new Uint8Array(buf))
+        .map(b => b.toString(16).padStart(2, "0"))
+        .join("")
+    );
 }
 
-/* =================== PUSH CARTA (DEDUP) =================== */
-function pushCarta(hash, img) {
-  if (!mazzo.some(c => c.hash === hash)) {
-    mazzo.push({
-      hash,
-      img,
-      estratta: false
-    });
+/* ===================================================
+   PUSH CARTA (Dedup + Rinomina)
+=================================================== */
+function pushCarta(hash, img, nomeOriginale = null) {
+  // duplicate per contenuto
+  if (mazzo.some(c => c.hash === hash)) {
+    cntDuplicate++;
+    return;
   }
+
+  let nome = nomeOriginale || "carta";
+
+  // se nome esiste → rinomina
+  if (mazzo.some(c => c.nome === nome)) {
+    nome = resolveNome(nome);
+  }
+
+  mazzo.push({
+    hash,
+    img,
+    nome,
+    originale: nomeOriginale,
+    estratta: false
+  });
+
+  cntNuove++;
 }
 
-/* =================== SALVATAGGI =================== */
+function resolveNome(base) {
+  const extMatch = base.match(/\.[a-z0-9]+$/i);
+  const ext = extMatch ? extMatch[0] : "";
+  const root = ext ? base.replace(ext, "") : base;
+
+  let i = 2;
+  let nuovo;
+  do {
+    nuovo = `${root} (${i})${ext}`;
+    i++;
+  } while (mazzo.some(c => c.nome === nuovo));
+
+  return nuovo;
+}
+
+/* ===================================================
+   SALVATAGGIO
+=================================================== */
 async function salvaCarte() {
   try {
     await localforage.setItem("mazzo", mazzo);
   } catch (e) {
-    console.error("Errore salvataggio:", e);
     customAlert("Errore nel salvataggio!");
   }
 }
@@ -878,11 +960,14 @@ async function caricaMazzoAllAvvio() {
     if (salvato && Array.isArray(salvato)) {
       mazzo = salvato;
       aggiornaContatore();
+      resetCartaVisuale();
     }
-  } catch(e) {}
+  } catch(e){}
 }
 
-/* =================== GIOCO =================== */
+/* ===================================================
+   GIOCO
+=================================================== */
 function aggiornaContatore() {
   contatore.innerText = mazzo.filter(c => !c.estratta).length;
 }
@@ -892,8 +977,8 @@ function resetCartaVisuale() {
 }
 
 function estraiCarta() {
-  const disponibili = mazzo.filter(c => !c.estratta);
-  if (!disponibili.length) {
+  const disp = mazzo.filter(c => !c.estratta);
+  if (!disp.length) {
     customAlert("Non esistono carte da estrarre!");
     return;
   }
@@ -901,7 +986,7 @@ function estraiCarta() {
   cartaEstratta.classList.add("shuffle");
   setTimeout(() => {
     cartaEstratta.classList.remove("shuffle");
-    const carta = disponibili[Math.floor(Math.random() * disponibili.length)];
+    const carta = disp[Math.floor(Math.random() * disp.length)];
     carta.estratta = true;
     cartaEstratta.innerHTML = `<img src="${carta.img}">`;
     aggiornaContatore();
@@ -916,10 +1001,11 @@ function resetPartita() {
   salvaCarte();
 }
 
-/* =================== CANCELLA MAZZO =================== */
+/* ===================================================
+   CANCELLA MAZZO
+=================================================== */
 cancellaMazzoBtn.addEventListener("click", () => {
-  customConfirm(    "Vuoi cancellare TUTTO il mazzo di carte?\n\n" +
-    "La partita e i giocatori NON verranno toccati.").then(async ok => {
+  customConfirm("Vuoi cancellare TUTTO il mazzo?").then(async ok => {
     if (!ok) return;
     mazzo = [];
     carteEstratte = [];
@@ -929,7 +1015,41 @@ cancellaMazzoBtn.addEventListener("click", () => {
     customAlert("Mazzo cancellato!");
   });
 });
+
+/* ===================================================
+   HOME
+=================================================== */
+backBtn.addEventListener("click", () => {
+  window.location.href = "./index.html";
+});
+
+/* ===================================================
+   CUSTOM CONFIRM / ALERT
+=================================================== */
+function customConfirm(msg) {
+  return new Promise(resolve=>{
+    modalText.textContent = msg;
+    modalOk.style.display="inline-block";
+    modalCancel.style.display="inline-block";
+    notifica.style.display="none";
+    modalOverlay.style.display="flex";
+    modalOk.onclick=()=>{modalOverlay.style.display="none";resolve(true);}
+    modalCancel.onclick=()=>{modalOverlay.style.display="none";resolve(false);}
+  });
+}
+
+function customAlert(msg) {
+  return new Promise(resolve=>{
+    modalText.textContent = msg;
+    modalOk.style.display="none";
+    modalCancel.style.display="none";
+    notifica.style.display="inline-block";
+    modalOverlay.style.display="flex";
+    notifica.onclick=()=>{modalOverlay.style.display="none";resolve();}
+  });
+}
 </script>
+
 
 
 <script>

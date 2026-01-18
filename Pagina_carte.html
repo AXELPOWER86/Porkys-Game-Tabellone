@@ -218,7 +218,9 @@
   </div>
 </div>
 <script>
-/* =================== VARIABILI =================== */
+/* ===================================================
+   VARIABILI E CONFIG
+=================================================== */
 let mazzo = [];
 let carteEstratte = [];
 
@@ -227,12 +229,22 @@ localforage.config({
   storeName: 'mazzo_carte'
 });
 
-/* =================== AVVIO =================== */
+/* conteggi caricamento */
+let cntNuove = 0;
+let cntDuplicate = 0;
+let cntSaltate = 0;
+let cntTotali = 0;
+
+/* ===================================================
+   AVVIO
+=================================================== */
 document.addEventListener("DOMContentLoaded", () => {
   caricaMazzoAllAvvio();
 });
 
-/* =================== ZIP =================== */
+/* ===================================================
+   ZIP
+=================================================== */
 function apriZip() {
   zipInput.value = "";
   zipInput.click();
@@ -242,19 +254,24 @@ zipInput.addEventListener("change", async () => {
   const files = [...zipInput.files];
   if (!files.length) return;
 
+  cntNuove = 0; cntDuplicate = 0; cntSaltate = 0; cntTotali = 0;
+
   const btn = document.querySelector(".btn[onclick='apriZip()']");
   const originalTxt = btn.textContent;
   btn.disabled = true;
   btn.textContent = "Caricamento...";
 
   for (const file of files) {
-    if (!file.name.toLowerCase().endsWith(".zip")) continue;
+    if (!file.name.toLowerCase().endsWith(".zip")) {
+      cntSaltate++; continue;
+    }
 
     const zip = await JSZip.loadAsync(file);
     const entries = Object.values(zip.files)
       .filter(f => !f.dir && /\.(png|jpe?g|webp)$/i.test(f.name));
 
     for (const img of entries) {
+      cntTotali++;
       const base64 = await img.async("base64");
       const data = `data:image/png;base64,${base64}`;
       const hash = await generaHash(data);
@@ -266,10 +283,19 @@ zipInput.addEventListener("change", async () => {
   aggiornaContatore();
   btn.disabled = false;
   btn.textContent = originalTxt;
-  customAlert("Mazzo caricato!");
+
+  customAlert(
+    `Caricamento completato!\n\n` +
+    `Nuove: ${cntNuove}\n` +
+    `Duplicate: ${cntDuplicate}\n` +
+    `Saltate (non immagini): ${cntSaltate}\n` +
+    `Totale input: ${cntTotali}`
+  );
 });
 
-/* =================== POPUP Aggiungi =================== */
+/* ===================================================
+   POPUP SCELTA (Aggiungi Carte)
+=================================================== */
 btnImg.addEventListener("click", () => {
   popupAddOverlay.style.display = "flex";
 });
@@ -290,20 +316,24 @@ btnChooseFolder.addEventListener("click", () => {
   folderInput.click();
 });
 
-/* =================== FILE SINGOLI =================== */
+/* ===================================================
+   FILE SINGOLI
+=================================================== */
 fileInput.addEventListener("change", async () => {
   const files = [...fileInput.files];
   if (!files.length) return;
 
+  cntNuove = 0; cntDuplicate = 0; cntSaltate = 0; cntTotali = 0;
+
   let pending = files.length;
   for (const f of files) {
     if (!f.type.startsWith("image/")) {
-      pending--;
-      continue;
+      cntSaltate++; pending--; continue;
     }
 
     const reader = new FileReader();
     reader.onload = async e => {
+      cntTotali++;
       const data = e.target.result;
       const hash = await generaHash(data);
       pushCarta(hash, data, f.name);
@@ -311,26 +341,37 @@ fileInput.addEventListener("change", async () => {
       if (pending === 0) {
         await salvaCarte();
         aggiornaContatore();
-        customAlert("Carte caricate!");
+        customAlert(
+          `Caricamento completato!\n\n` +
+          `Nuove: ${cntNuove}\n` +
+          `Duplicate: ${cntDuplicate}\n` +
+          `Saltate (non immagini): ${cntSaltate}\n` +
+          `Totale input: ${cntTotali}`
+        );
       }
     };
     reader.readAsDataURL(f);
   }
 });
 
-/* =================== CARTELLE =================== */
+/* ===================================================
+   CARTELLE
+=================================================== */
 folderInput.addEventListener("change", async () => {
   const files = [...folderInput.files];
   if (!files.length) return;
 
+  cntNuove = 0; cntDuplicate = 0; cntSaltate = 0; cntTotali = 0;
+
   let pending = files.length;
   for (const f of files) {
     if (!f.type.startsWith("image/")) {
-      pending--;
-      continue;
+      cntSaltate++; pending--; continue;
     }
+
     const reader = new FileReader();
     reader.onload = async e => {
+      cntTotali++;
       const data = e.target.result;
       const hash = await generaHash(data);
       pushCarta(hash, data, f.name);
@@ -338,14 +379,22 @@ folderInput.addEventListener("change", async () => {
       if (pending === 0) {
         await salvaCarte();
         aggiornaContatore();
-        customAlert("Carte caricate!");
+        customAlert(
+          `Caricamento completato!\n\n` +
+          `Nuove: ${cntNuove}\n` +
+          `Duplicate: ${cntDuplicate}\n` +
+          `Saltate (non immagini): ${cntSaltate}\n` +
+          `Totale input: ${cntTotali}`
+        );
       }
     };
     reader.readAsDataURL(f);
   }
 });
 
-/* =================== HASH =================== */
+/* ===================================================
+   HASH (Dedup contenuto)
+=================================================== */
 function generaHash(dataURL) {
   return crypto.subtle.digest("SHA-256", new TextEncoder().encode(dataURL))
     .then(buf =>
@@ -355,16 +404,19 @@ function generaHash(dataURL) {
     );
 }
 
-/* =================== PUSH CON DEDUP + RINOMINA =================== */
+/* ===================================================
+   PUSH CARTA (Dedup + Rinomina)
+=================================================== */
 function pushCarta(hash, img, nomeOriginale = null) {
-  // dedup sul contenuto
+  // duplicate per contenuto
   if (mazzo.some(c => c.hash === hash)) {
+    cntDuplicate++;
     return;
   }
 
   let nome = nomeOriginale || "carta";
 
-  // rinomina se esiste
+  // se nome esiste → rinomina
   if (mazzo.some(c => c.nome === nome)) {
     nome = resolveNome(nome);
   }
@@ -376,6 +428,8 @@ function pushCarta(hash, img, nomeOriginale = null) {
     originale: nomeOriginale,
     estratta: false
   });
+
+  cntNuove++;
 }
 
 function resolveNome(base) {
@@ -385,7 +439,6 @@ function resolveNome(base) {
 
   let i = 2;
   let nuovo;
-
   do {
     nuovo = `${root} (${i})${ext}`;
     i++;
@@ -394,7 +447,9 @@ function resolveNome(base) {
   return nuovo;
 }
 
-/* =================== SALVATAGGIO =================== */
+/* ===================================================
+   SALVATAGGIO
+=================================================== */
 async function salvaCarte() {
   try {
     await localforage.setItem("mazzo", mazzo);
@@ -414,7 +469,9 @@ async function caricaMazzoAllAvvio() {
   } catch(e){}
 }
 
-/* =================== GIOCO =================== */
+/* ===================================================
+   GIOCO
+=================================================== */
 function aggiornaContatore() {
   contatore.innerText = mazzo.filter(c => !c.estratta).length;
 }
@@ -448,7 +505,9 @@ function resetPartita() {
   salvaCarte();
 }
 
-/* =================== CANCELLA MAZZO =================== */
+/* ===================================================
+   CANCELLA MAZZO
+=================================================== */
 cancellaMazzoBtn.addEventListener("click", () => {
   customConfirm("Vuoi cancellare TUTTO il mazzo?").then(async ok => {
     if (!ok) return;
@@ -461,12 +520,16 @@ cancellaMazzoBtn.addEventListener("click", () => {
   });
 });
 
-/* =================== BACK HOME =================== */
+/* ===================================================
+   HOME
+=================================================== */
 backBtn.addEventListener("click", () => {
   window.location.href = "./index.html";
 });
 
-/* =================== CUSTOM CONFIRM =================== */
+/* ===================================================
+   CUSTOM CONFIRM / ALERT
+=================================================== */
 function customConfirm(msg) {
   return new Promise(resolve=>{
     modalText.textContent = msg;
@@ -479,7 +542,6 @@ function customConfirm(msg) {
   });
 }
 
-/* =================== CUSTOM ALERT =================== */
 function customAlert(msg) {
   return new Promise(resolve=>{
     modalText.textContent = msg;
