@@ -383,11 +383,11 @@ folderInput.addEventListener("change", async () => {
         await salvaCarte();
         aggiornaContatore();
         customAlert(
-          "Caricamento completato!\n\n" +
-          "Nuove: ${cntNuove}\n" +
-          "Duplicate: ${cntDuplicate}\n" +
-          "Saltate (non immagini): ${cntSaltate}\n" +
-          "Totale input: ${cntTotali}"
+          `Caricamento completato!\n\n` +
+          `Nuove: ${cntNuove}\n` +
+          `Duplicate: ${cntDuplicate}\n` +
+          `Saltate (non immagini): ${cntSaltate}\n` +
+          `Totale input: ${cntTotali}`
         );
       }
     };
@@ -559,3 +559,4 @@ function customAlert(msg) {
 
 </body>
 </html>
+
