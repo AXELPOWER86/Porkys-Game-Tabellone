@@ -557,5 +557,84 @@ function customAlert(msg) {
 }
 </script>
 
+</script>
+<div id="fakeWindow" class="fake-window hidden">
+  <div id="fakeWindowContent"></div>
+</div>
+<script>
+let exitZoneActive = false;
+window.addEventListener("mousemove", e => {
+  if (exitZoneActive) return;
+
+  if (e.clientX > window.innerWidth - 80 && e.clientY < 80) {
+    exitZoneActive = true;
+
+    const btn = document.getElementById("exit-zone");
+    btn.classList.add("active");
+
+    setTimeout(() => {
+      btn.classList.remove("active");
+      exitZoneActive = false;
+    }, 3000);
+  }
+});
+
+
+document.getElementById('exit-zone').addEventListener('click', () => {
+  if (window.exitApp) {
+    window.exitApp(); // Electron
+  } else {
+    window.close(); // browser
+  }
+});
+</script>
+<script>
+function customConfirm(message) {
+  return new Promise(function (resolve) {
+
+    const overlay = document.getElementById("modalOverlay");
+    const text = document.getElementById("modalText");
+    const okBtn = document.getElementById("modalOk");
+    const cancelBtn = document.getElementById("modalCancel");
+    const kBtn = document.getElementById("notifica");
+
+    okBtn.style.display = "inline-block";
+    cancelBtn.style.display = "inline-block";
+    kBtn.style.display = "none";
+    text.textContent = message;
+    overlay.style.display = "flex";
+
+    okBtn.focus();
+
+    function close(result) {
+      overlay.style.display = "none";
+
+      okBtn.removeEventListener("click", onOk);
+      cancelBtn.removeEventListener("click", onCancel);
+      document.removeEventListener("keydown", onKey);
+
+      resolve(result);
+    }
+
+    function onOk() {
+      close(true);
+    }
+
+    function onCancel() {
+      close(false);
+    }
+
+    function onKey(e) {
+      if (e.key === "Enter") close(true);
+      if (e.key === "Escape") close(false);
+    }
+
+    okBtn.addEventListener("click", onOk);
+    cancelBtn.addEventListener("click", onCancel);
+    document.addEventListener("keydown", onKey);
+  });
+}
+</script>
+
 </body>
 </html>
